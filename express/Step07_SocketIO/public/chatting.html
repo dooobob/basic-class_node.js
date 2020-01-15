@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>public/chatting.html</title>
+    </head>
+    <style>
+        #chattingPage {
+            display: none;
+        }
+        #socketState strong {
+            color: red;
+        }
+        #roomList li {
+            cursor: pointer;
+        }
+        #roomList li:hover {
+            background-color: #cecece;
+        }
+        #chatDiv {
+            height: 300px;
+            overflow-y: scroll;
+            background: #cecece;
+        }
+        #memberList span {
+            cursor: pointer;
+        }
+        #memberList span:hover {
+            color: red;
+            font-weight: bold;
+        }
+
+    </style>
+    <body>
+        <div id="socketState">
+            <strong>웹소켓 접속중 ...</strong>
+        </div>
+        <div id="lobbyPage">
+            <h3>챗팅방 로비 입니다.</h3>
+            <input type="text" placeholder="방제목 입력..." id="roomName"/>
+            <button id="makeBtn">만들기</button>
+            <h4>개설된 방 목록입니다.</h4>
+            <ul id="roomList"></ul>
+        </div>
+        <div id="chattingPage">
+            <h3>대화방 입니다.</h3>
+            <div id="memberList"></div>
+            <h4>**
+                <strong>방제목 출력 예정</strong>
+                **</h4>
+            <div id="chatDiv">
+                <ul id="msgList"></ul>
+            </div>
+            <input type="text" id="inputMsg"/>
+            <button id="sendBtn">전송</button>
+            <button id="endBtn">나가기</button>
+        </div>
+        <script type="text/javascript" src="/socket.io/socket.io.js/"></script>
+        <script type="text/javascript" src="/js/jquery-1.11.2.js"></script>
+        <script type="text/javascript">
+            // 서버에 웹소켓 접속하기
+            var socket = io.connect();
+            var roomId; // 참여한 방의 아이디
+            var chatName; // 방에 참여할 때의 대화명
+            // 접속이 되었을때 실행 할 함수 등록
+            socket.on('connect', function() {
+                $('#socketState strong').text('웹소켓 접속됨').css('color', 'green');
+
+                // 개설된 방목록을 달라고 이벤트를 발생시킨다.
+                socket.emit('getRoomList');
+            });
+
+            socket.on('getRoomListResult', function(data) {
+                // data 에는 현재 개설된 방정보가 모두 들어있다.
+                $('#roomList li').detach();
+                // 반복문 돌면서 개설된 방 정보를 출력한다.
+                for (var i in data) {
+                    var roomObj = data[i];
+                    $('<li/>').attr('data-roomid', roomObj.roomId).text(roomObj.roomName).appendTo('#roomList');
+                }
+            });
+
+            // 새로운 방이 만들어 졌을때 발생하는 이벤트 처리
+            socket.on('newRoom', function(data) {
+                // data 에는 현재 개설된 방정보가 모두 들어있다.
+                $('#roomList li').detach();
+                // 반복문 돌면서 개설된 방 정보를 출력한다.
+                for (var i in data) {
+                    var roomObj = data[i];
+                    $('<li/>').attr('data-roomid', roomObj.roomId).text(roomObj.roomName).appendTo('#roomList');
+                }
+            });
+
+            // 접속이 끈겼을때 실행할 함수 등록
+            socket.on('disconnect', function() {
+                $('#socketState strong').text('웹소켓 접속중 ...').css('color', 'red');
+            });
+
+            // 방 만들기 버튼을 눌렀을때 실행 할 함수 등록
+            $('#makeBtn').click(function() {
+                // 방의 제목을 읽어온다.
+                var roomName = $('#roomName').val();
+                if (roomName == '')
+                    return;
+
+                // socket 에 방을 만들어 달라는 이벤트를 발생 시키면서 방의 제목을 전달한다.
+                socket.emit('makeRoom', roomName);
+            });
+
+            socket.on('makeAndMove', function(data) {
+                roomId = data; // 방의 아이디를 변수에 저장
+                chatName = prompt('대화명을 입력하세요');
+                $('#lobbyPage').hide();
+                $('#chattingPage').show();
+                // 방의 아이디와 대화명을 object에 담아서
+                var obj = {
+                    roomId: roomId,
+                    chatName: chatName
+                }
+                // 서버에 전송
+                socket.emit('joinRoom', obj);
+            });
+
+            socket.on('joinRoomResult', function(data) {
+                // data => 대화방의 제목
+                $('#chattingPage h4 strong').text(data);
+            });
+
+            socket.on('newPerson', function(data) {
+                console.log(data);
+                $('<li/>').text(data.chatName + ' 님 입장...').appendTo('#msgList');
+
+                $("#memberList span").detach();
+                //참여자 정보를 span 에 감싸서 출력
+                for (var i in data.members) {
+                    var tmp = data.members[i];
+                    $("<span/>").attr("data-socketid", tmp.socketId).text(tmp.chatName + " | ").appendTo("#memberList");
+                }
+            });
+
+            // 방목록을 클릭했을 때 실행할 함수 등록
+            $(document).on('click', '#roomList li', function() {
+                var roomName = $(this).text(); //방의 이름
+                var isIn = confirm(roomName + " 방에 입장하시겠습니까?");
+                if (isIn == false)
+                    return; //함수 종료
+                //입장할 방의 아이디를 읽어온다.
+                roomId = $(this).attr("data-roomid");
+                //대화명을 입력 받는다.
+                chatName = prompt("대화명을 입력하세요", "익명");
+                $("#lobbyPage").hide();
+                $("#chattingPage").show();
+                //서버에 전송할 정보를 object 에 담고
+                var obj = {
+                    roomId: roomId,
+                    chatName: chatName
+                };
+                //이벤트를 발생시키면서 전송한다.
+                socket.emit("joinRoom", obj);
+            });
+
+            // 대화 내용 전송 버튼을 눌렀을때 호출되는 함수 등록
+            $('#sendBtn').click(function() {
+                //입력한 문자열을 읽어온다.
+                var msg = $("#inputMsg").val();
+                if (msg == "")
+                    return;
+
+                //대화명과 입력한 문자열을 object 에 담아서
+                var obj = {
+                    chatName: chatName,
+                    msg: msg
+                };
+                //이벤트를 발생시키면서 서버에 전송 한다.
+                socket.emit("sendMessage", obj);
+                //입력창 초기화
+                $("#inputMsg").val("");
+            });
+
+            // 새로운 대화 내용이 도착하는 이벤트 처리
+            socket.on('newMessage', function(data) {
+                // data => {chatName:'xxx', msg:'xxx'}
+                var line = data.chatName + ': ' + data.msg;
+                $('<li/>').text(line).appendTo('#msgList');
+                $('#chatDiv').scrollTop(99999999);
+            });
+
+            // 나가기 버튼을 눌렀을 때
+            $('#endBtn').click(function() {
+                var isOut = confirm('퇴장 하시겠습니까?');
+                if (isOut) {
+                    // 페이지 새로 고침
+                    location.href = location.href;
+                }
+            });
+
+            //누군가 대화방을 나갔다면
+            socket.on("leaveMember", function(data) {
+                //data => {chatName:mem.chatName, members:members}
+                $("<li/>").text(data.chatName + " 님 퇴장!").appendTo("#msgList");
+                $("#chatDiv").scrollTop(999999999);
+                //일단 모두 지우기
+                $("#memberList span").detach();
+                //참여자 정보를 span 에 감싸서 출력
+                for (var i in data.members) {
+                    var tmp = data.members[i];
+                    $("<span/>").attr("data-socketid", tmp.socketId).text(tmp.chatName + " | ").appendTo("#memberList");
+                }
+            });
+
+            // 귓말 보내려고 클릭 했을때 이벤트 처리
+            $(document).on('click', '#memberList span', function() {
+                // 받을 사람의 대화명
+                var name = $(this).text();
+                // 받을 메세지 입력받기
+                var msg = prompt(name + '에게 보낼 귓말 입력');
+                // 받을 사람의 소켓 아이디
+                var socketId = $(this).attr('data-socketid');
+                // object에 정보를 담는다.
+                var obj = {};
+                obj.socketId = socketId;
+                obj.chatName = chatName;
+                obj.msg = msg;
+                // 이벤트를 발생 시켜서 서버에 전송
+                socket.emit('privateMessage', obj);
+            });
+
+            // 귓말 도착 이벤트 처리
+            socket.on('getPrivateMessage', function(data) {
+                var line = '[귓말]' + data.chatName + ': ' + data.msg;
+                $('<li/>').text(line).css('color', 'red').appendTo('#msgList');
+
+                $('#chatDiv').scrollTop(99999999);
+            });
+        </script>
+    </body>
+</html>

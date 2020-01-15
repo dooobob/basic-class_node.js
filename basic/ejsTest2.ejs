@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>ejsTest2.ejs</title>
+    </head>
+    <body>
+        <table>
+            <caption>회원목록 입니다.</caption>
+            <thead>
+                <tr>
+                    <th>번호</th>
+                    <th>이름</th>
+                    <th>주소</th>
+                </tr>
+            </thead>
+            <tbody>
+                <%for(var i=0; i<members.length; i++){%>
+                    <% var tmp=members[i]; %>
+                    <tr>
+                        <td><%=tmp.num %></td>
+                        <td><%=tmp.name %></td>
+                        <td><%=tmp.addr %></td>
+                    </tr>
+                <%}%>
+            </tbody>
+        </table>
+    </body>
+</html>

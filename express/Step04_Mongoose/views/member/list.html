@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>list.html</title>
+	<link rel="stylesheet" href="/css/bootstrap.css"/>
+</head>
+<body>
+<div class="container">
+	<table class="table table-striped">
+		<thead>
+			<tr>
+				<th>번호</th>
+				<th>이름</th>
+				<th>주소</th>
+				<th>등록일</th>
+				<th>수정</th>
+				<th>삭제</th>
+			</tr>
+		</thead>
+		<tbody>
+		<%for(var i in members){
+			var tmp=members[i];%>
+			<tr>
+				<td><%=tmp.num%></td>
+				<td><%=tmp.name%></td>
+				<td><%=tmp.addr%></td>
+				<td><%=tmp.regdate%></td>
+				<td><a href="/member/updateform?id=<%=tmp._id%>">수정</a></td>
+				<td><a href="/member/delete?id=<%=tmp._id%>">삭제</a></td>
+			</tr>
+		<%}%>	
+		</tbody>
+	</table>
+</div>	
+</body>
+</html>

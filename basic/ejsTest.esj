@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>ejsTest.html</title>
+    </head>
+    <body>
+        <h3>ejs 모듈이 해석한 결과 입니다.</h3>
+        <p>
+            오늘의 인물 :
+            <strong><%=name%></strong>
+        </p>
+        <% for(var i=0; i<10; i++){ %>
+            <%=i%><br/>
+        <% } %>
+    </body>
+</html>

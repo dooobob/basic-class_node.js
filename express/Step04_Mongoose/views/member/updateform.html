@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>updateform.html</title>
+</head>
+<body>
+<h3>회원정보 수정폼</h3>
+<form action="/member/update" method="post">
+	<input type="hidden" name="id" value="<%=member._id%>"/>
+	번호 <input type="text" name="num" value="<%=member.num%>"/>
+	이름 <input type="text" name="name" value="<%=member.name%>"/>
+	주소 <input type="text" name="addr" value="<%=member.addr%>"/>
+	<button type="submit">수정</button>
+</form>
+</body>
+</html>

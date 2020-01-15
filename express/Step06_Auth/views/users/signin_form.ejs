@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>signin_form.html</title>
+    </head>
+    <body>
+        <h3>로그인 폼입니다.</h3>
+        <div>
+            <%if(message.length>0){%>
+                <strong><%=message%></strong>
+            <%}%>
+        </div>
+        <form action="/users/login" method="post">
+            이메일
+            <input type="text" name="email"/><br/>
+            비밀번호
+            <input type="text" name="password"/><br/>
+            <button type="submit">로그인</button>
+        </form>
+        <p>계정이 필요 하십니까?
+            <a href="/users/signup_form">Signup</a>
+        </p>
+    </body>
+</html>

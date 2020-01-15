@@ -1,0 +1,153 @@
+#!/usr/bin/env node
+
+var debug = require('debug')('template1');
+var app = require('../app');
+
+// 웹서버 port 설정 3000 번이 default 이다
+app.set('port', process.env.PORT || 3000);
+
+var server = app.listen(app.get('port'), function() {
+    debug('Express server listening on port ' + server.address().port);
+});
+
+// 웹소켓 관련 설정
+var socketIO = require('socket.io');
+var io = socketIO.listen(server);
+
+// 개설된 방의 정보를 저장할 배열
+var rooms = [];
+
+// 클라이언트가 웹소켓 접속했을때 실행 할 함수 등록
+io.sockets.on('connection', function(socket) {
+    socket.on('getRoomList', function() {
+        socket.emit('getRoomListResult', rooms);
+    });
+    // 방만들기 이벤트 처리
+    socket.on('makeRoom', function(data) {
+        var roomObj = {};
+        roomObj.roomId = socket.id;
+        roomObj.roomName = data;
+        // 배열에 저장해 놓고
+        rooms.push(roomObj);
+        // 클라이언트에게 이벤트를 발생 시키고  socket id 를 전달한다.
+        socket.emit('makeAndMove', socket.id);
+    });
+
+    socket.on('joinRoom', function(data) {
+        // data => {roomId:'xxx', chatName:'xxx'}
+        // 방의 아이디로 socket 을 그룹으로 묶는다.
+        socket.join(data.roomId);
+        // socket 객체에 그룹명을 저장한다.
+        socket.roomId = data.roomId;
+        // 조인 할 방객체의 참조값을 얻어 찾아온다.
+        var roomObj = getRoomObj(data.roomId);
+        if (roomObj.members == undefined) { // 방을 최초로 만든경우
+            roomObj.members = [];
+            // 참여자 정보를 객체에 담아서 members에 저장한다.
+            var mem = {};
+            mem.socketId = socket.id;
+            mem.chatName = data.chatName;
+            roomObj.members.push(mem);
+            // 새로운 방이 만들어 졌다고 모든 클라이언트에게 이벤트 발생시키기
+            io.sockets.emit('newRoom', rooms);
+        } else { // 이미 존재하고 있는 방인 경우
+            var mem = {};
+            mem.socketId = socket.id;
+            mem.chatName = data.chatName;
+            roomObj.members.push(mem);
+        }
+
+        // 이벤트를 발생시킨 클라이언트에게 방의 이름을 전달해준다.
+        socket.emit('joinRoomResult', roomObj.roomName);
+        // 같은 대화방 안에 있는 클라이언트에게 새로운 정보를 전달해준다.
+        var newPerson = {};
+        newPerson.chatName = data.chatName;
+        newPerson.members = roomObj.members;
+        // 그룹 전송
+        io.sockets.in(data.roomId).emit('newPerson', newPerson);
+    });
+
+    // 메세지 전송 이벤트 처리
+    socket.on('sendMessage', function(data) {
+        // 이벤트를 발생시킨 socket이 속한 그룹명
+        var groupName = socket.roomId;
+        // 그룹 전송을 한다.
+        io.sockets.in(groupName).emit('newMessage', data);
+    });
+
+    // 웹소켓 접속이 종료 되었을 때 발생하는 이벤트 처리
+    socket.on('disconnect', function() {
+        console.log("disconnect!");
+        //socket 에 저장한 roomId 가 있는지 확인해본다.
+        var roomId = socket.roomId;
+        if (roomId == undefined) {
+            console.log("undefined!");
+            //여기가 수행된다면 방에 입장한 클라이언트가 아니다
+            return;
+        }
+        //접속 종료된 소켓의 아이디를 읽어온다.
+        var socketId = socket.id;
+        console.log("나갔네:" + socketId);
+        try {
+            //방 탈퇴 처리를 한다.
+            socket.leave(roomId); //socket 이 속한 그룹에서 탈퇴
+            //방 참여자 목록객체를 업데이트 한다.
+            //탈퇴한 회원이 속해 있던 방객체를 얻어온다.
+            var roomObj = getRoomObj(roomId);
+            var members = roomObj.members;
+            for (var i in members) {
+                var mem = members[i];
+                if (mem.socketId == socketId) { //탈퇴한 참여자 정보를 찾아서
+                    //배열에서 제거한다.
+                    members.splice(i, 1);
+                    //만일 모두 퇴장 했다면
+                    if (members.length == 0) {
+                        for (var j in rooms) {
+                            var roomObj = rooms[j];
+                            if (roomObj.roomId == roomId) {
+                                rooms.splice(j, 1); //방 삭제
+                                //방목록이 업데이트 될수 있도록 방정보를 다시 보내준다.
+                                io.sockets.emit("newRoom", rooms);
+                                return;
+                            }
+                        }
+                    }
+
+                    //탈퇴한 회원의 대화명과 방 구성원 정보를 object 에 담아서
+                    var obj = {
+                        chatName: mem.chatName,
+                        members: members
+                    };
+                    //전송한다.
+                    io.sockets.in(roomId).emit("leaveMember", obj);
+                    return; //함수 종료
+                }
+            }
+        } catch (e) {
+            console.log(e);
+        }
+    });
+
+    //귓말 전송 이벤트 처리
+    socket.on("privateMessage", function(data) {
+        //받을 사람의 소켓아이디
+        var socketId = data.socketId;
+        //이벤트를 받을 소켓 객체
+        var targetSocket = io.sockets.connected[socketId];
+        if (!targetSocket) {
+            return;
+        }
+        //해당소켓에만 이벤트를 발생시킨다.
+        targetSocket.emit("getPrivateMessage", data);
+    });
+});
+
+// rooms 배열에서 전달된 roomId 에 해당하는 객체를 찾아서 리턴하는 함수
+function getRoomObj(roomId) {
+    for (var i in rooms) {
+        var tmp = rooms[i];
+        if (tmp.roomId == roomId) {
+            return tmp;
+        }
+    }
+}

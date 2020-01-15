@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>/views/board/insertform.ejs</title>
+    </head>
+    <body>
+        <h3>파일 업로드 폼입니다.</h3>
+        <form class="" action="/board/insert" method="post" enctype="multipart/form-data">
+            작성자
+            <input type="text" name="writer"/><br>
+            제목
+            <input type="text" name="title"><br>
+            첨부파일
+            <input type="file" name="myFile"><br>
+            <button type="submit">등록</button>
+        </form>
+    </body>
+</html>

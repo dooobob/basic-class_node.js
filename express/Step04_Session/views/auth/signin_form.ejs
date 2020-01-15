@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>/views/signin_form.ejs</title>
+    </head>
+    <body>
+        <h3>로그인 폼입니다.</h3>
+        <form action="/auth/signin" method="post">
+            <input type="hidden" name="url" value="<%=url%>"/>
+            <label for="id">아이디</label>
+            <input type="text" name="id" id="id"/><br/>
+            <label for="pwd">비밀번호</label>
+            <input type="password" name="pwd" id="pwd"/><br/>
+            <button type="submit">로그인</button>
+        </form>
+    </body>
+</html>

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>client.html</title>
+    </head>
+    <body>
+        <h3>socket.io 테스트</h3>
+        <input type="text" id="inputMsg">
+        <button type="button" name="button" id="sendBtn">전송</button>
+        <ul id="msgList">
+            <li>하나</li>
+            <li>두울</li>
+        </ul>
+    </body>
+    <script type="text/javascript" src='/socket.io/socket.io.js'></script>
+    <script type="text/javascript" src="http://code.jquery.com/jquery-1.11.3.js"></script>
+    <script type="text/javascript">
+        // 서버 웹소켓 접속하기
+        var socket = io.connect();
+        // 웹소켓 접속 되었을때 실행되는 함수 등록
+        socket.on('connect', function() {
+            // alert('웹소켓 접속 되었습니다.');
+            console.log('웹소켓 접속 됨!');
+        });
+
+        // 서버가 발생시키는 이벤트 처리
+        socket.on('getMessage', function(data) {
+            // 서버로부터 받은 물자열을 li 요소로 출력해보기
+            $('<li/>').text(data).appendTo('#msgList');
+            // $('#msgList').append('<li>' + data + '</li>');
+        });
+
+        // 전송 버튼 눌렀을때 실행할 함수 등록
+        $('#sendBtn').click(function() {
+            // 입력한 문자열을 읽어온다.
+            var msg = $('#inputMsg').val();
+            // 이벤트를 발생시키면서 서버에 전송한다. socket.emit('이벤트명', 전송데이터)
+            socket.emit('sendMessage', msg);
+        });
+    </script>
+</html>

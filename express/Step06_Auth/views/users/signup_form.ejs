@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>signup_form.html</title>
+    </head>
+    <body>
+        <h3>회원 가입 폼 입니다.</h3>
+        <div>
+            <!-- flash 메세지가 존재한다라면 flash 메세지 출력-->
+            <%if(message.length>0){%>
+                <strong><%=message%></strong>
+            <%}%>
+        </div>
+        <form action="/users/signup" method="post">
+            이메일
+            <input type="text" name="email"/><br/>
+            비밀번호
+            <input type="text" name="password"/><br/>
+            이름
+            <input type="text" name="name"/><br/>
+            <button type="sibmit">가입</button>
+        </form>
+        <a href="/">나가기</a>
+    </body>
+</html>

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>/views/board/list.ejs</title>
+    </head>
+    <body>
+        <h3>업로드된 파일 목록입니다.</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>작성자</th>
+                    <th>제목</th>
+                    <th>파일명</th>
+                    <th>삭제</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% for(var i=0; i<list.length; i++){%>
+                    <% var tmp=list[i]; %>
+                    <tr>
+                        <td><%=tmp.writer%></td>
+                        <td><%=tmp.title%></td>
+                        <td>
+                            <a href="/board/download?id=<%=tmp._id%>"><%=tmp.orgFileName%></a>
+                        </td>
+                        <td>
+                            <a href="/board/delete?id=<%=tmp._id%>">삭제</a>
+                        </td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </body>
+</html>
