@@ -6,7 +6,7 @@
     "start": "node ./bin/www"
   },
   "dependencies": {
-    "express": "~4.16.4",
+    "express": "~4.17.3",
     "static-favicon": "~2.0.0-alpha",
     "morgan": "~1.9.1",
     "cookie-parser": "~1.4.3",
